@@ -10,7 +10,7 @@ def index():
 # 用于验证 token 的路由
 @app.route('/wechat', methods=['GET'])
 def verify_token():
-    token = 'your_token'  # 将此处的 'your_token' 替换为你在公众号设置中设置的 token
+    token = 'one'  # 将此处的 'your_token' 替换为你在公众号设置中设置的 token
     signature = request.args.get('signature')
     timestamp = request.args.get('timestamp')
     nonce = request.args.get('nonce')
