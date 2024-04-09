@@ -6,24 +6,20 @@ MYSQL_PASSWORD = "Cnm.0001+"
 MYSQL_DATABASE = "coding"
 
 def save_user_info(openid):
-    # 连接到MySQL数据库
-    conn = mysql.connector.connect(
-        host=MYSQL_HOST,
-        user=MYSQL_USER,
-        password=MYSQL_PASSWORD,
-        database=MYSQL_DATABASE
-    )
-
-    # 创建数据库游标
-    cursor = conn.cursor()
-
-    # 插入用户信息到数据库
-    insert_query = "INSERT INTO users (openid) VALUES (%s)"
-    cursor.execute(insert_query, (openid,))
-
-    # 提交事务
-    conn.commit()
-
-    # 关闭游标和数据库连接
-    cursor.close()
-    conn.close()
+    try:
+        # 使用上下文管理器管理数据库连接和游标
+        with mysql.connector.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE
+        ) as conn:
+            with conn.cursor() as cursor:
+                # 插入用户信息到数据库
+                insert_query = "INSERT INTO users (openid) VALUES (%s)"
+                cursor.execute(insert_query, (openid,))
+                # 提交事务
+                conn.commit()
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        # 在这里添加更多的错误处理逻辑
