@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import hashlib
 import xmltodict
+from database import save_user_info
 
 app = Flask(__name__)
 
@@ -11,6 +12,32 @@ def index():
 
 # 设置你的Token，用于验证微信服务器发送的请求
 TOKEN = "one"
+
+def handle_text_message(msg_dict):
+    content = msg_dict['Content']
+    reply = {
+        'ToUserName': msg_dict['FromUserName'],
+        'FromUserName': msg_dict['ToUserName'],
+        'CreateTime': msg_dict['CreateTime'],
+        'MsgType': 'text',
+        'Content': f"You said: {content}"
+    }
+    return xmltodict.unparse({'xml': reply}, pretty=True)
+
+
+def handle_subscribe_event(msg_dict):
+    openid = msg_dict['FromUserName']
+    # 保存用户信息到MySQL数据库
+    save_user_info(openid)
+
+    reply = {
+        'ToUserName': openid,
+        'FromUserName': msg_dict['ToUserName'],
+        'CreateTime': msg_dict['CreateTime'],
+        'MsgType': 'text',
+        'Content': "欢迎关注！"
+    }
+    return xmltodict.unparse({'xml': reply}, pretty=True)
 
 @app.route('/wechat', methods=['GET', 'POST'])
 def wechat():
@@ -39,22 +66,17 @@ def wechat():
         msg_dict = xmltodict.parse(data)['xml']
         msg_type = msg_dict['MsgType']
         if msg_type == 'text':
-            # 处理文本消息
-            content = msg_dict['Content']
-            reply = {
-                'ToUserName': msg_dict['FromUserName'],
-                'FromUserName': msg_dict['ToUserName'],
-                'CreateTime': msg_dict['CreateTime'],
-                'MsgType': 'text',
-                'Content': f"You said: {content}"
-            }
-            # 将回复消息转换为XML格式
-            reply_xml = xmltodict.unparse({'xml': reply}, pretty=True)
-            return reply_xml
-        else:
-            # 处理其他类型消息
-            # 在这里添加你需要处理的其他类型消息的代码
-            return 'success'
+            return handle_text_message(msg_dict)
+        elif msg_type == 'event':
+            event = msg_dict['Event']
+            if event == 'subscribe':
+                return handle_subscribe_event(msg_dict)
+            else:
+                return 'success'
+    else:
+        # 处理其他类型消息
+        # 在这里添加你需要处理的其他类型消息的代码
+        return 'success'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)
