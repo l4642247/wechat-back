@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # 安装 Flask 和其它依赖包
-RUN pip install -r requirements.txt
+RUN pip install --requirement requirements.txt
 
 # 暴露端口 80
 EXPOSE 80
