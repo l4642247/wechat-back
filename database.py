@@ -1,4 +1,5 @@
 import mysql.connector
+from datetime import datetime
 
 MYSQL_HOST = "121.43.130.247"
 MYSQL_USER = "root"
