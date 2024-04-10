@@ -1,9 +1,13 @@
+import logging
 from flask import Flask, request, jsonify
 import hashlib
 import xmltodict
-from database import save_user_info
+from database import save_user_info, log_message
 
 app = Flask(__name__)
+
+# 设置日志级别为INFO
+logging.basicConfig(level=logging.INFO)
 
 # 根路由，用于验证部署成功
 @app.route('/')
@@ -14,30 +18,39 @@ def index():
 TOKEN = "one"
 
 def handle_text_message(msg_dict):
-    content = msg_dict['Content']
-    reply = {
-        'ToUserName': msg_dict['FromUserName'],
-        'FromUserName': msg_dict['ToUserName'],
-        'CreateTime': msg_dict['CreateTime'],
-        'MsgType': 'text',
-        'Content': f"You said: {content}"
-    }
-    return xmltodict.unparse({'xml': reply}, pretty=True)
-
+    try:
+        content = msg_dict['Content']
+        reply = {
+            'ToUserName': msg_dict['FromUserName'],
+            'FromUserName': msg_dict['ToUserName'],
+            'CreateTime': msg_dict['CreateTime'],
+            'MsgType': 'text',
+            'Content': f"You said: {content}"
+        }
+        log_message(msg_dict, reply)
+        return xmltodict.unparse({'xml': reply}, pretty=True)
+    except Exception as e:
+            app.logger.error("Error handling text message: %s", e)
+            return 'success'
 
 def handle_subscribe_event(msg_dict):
-    openid = msg_dict['FromUserName']
-    # 保存用户信息到MySQL数据库
-    save_user_info(openid)
+    try:
+        openid = msg_dict['FromUserName']
+        # 保存用户信息到MySQL数据库
+        save_user_info(openid)
 
-    reply = {
-        'ToUserName': openid,
-        'FromUserName': msg_dict['ToUserName'],
-        'CreateTime': msg_dict['CreateTime'],
-        'MsgType': 'text',
-        'Content': "欢迎关注！"
-    }
-    return xmltodict.unparse({'xml': reply}, pretty=True)
+        reply = {
+            'ToUserName': openid,
+            'FromUserName': msg_dict['ToUserName'],
+            'CreateTime': msg_dict['CreateTime'],
+            'MsgType': 'text',
+            'Content': "欢迎关注！"
+        }
+        log_message(msg_dict, reply)
+        return xmltodict.unparse({'xml': reply}, pretty=True)
+    except Exception as e:
+            app.logger.error("Error handling subscribe event: %s", e)
+            return 'success'
 
 @app.route('/wechat', methods=['GET', 'POST'])
 def wechat():
@@ -59,20 +72,26 @@ def wechat():
         if hashcode == signature:
             return echostr
         else:
+            app.logger.error("Invalid signature")
             return 'Invalid signature', 403
     elif request.method == 'POST':
         # 处理接收到的消息
-        data = request.data
-        msg_dict = xmltodict.parse(data)['xml']
-        msg_type = msg_dict['MsgType']
-        if msg_type == 'text':
-            return handle_text_message(msg_dict)
-        elif msg_type == 'event':
-            event = msg_dict['Event']
-            if event == 'subscribe':
-                return handle_subscribe_event(msg_dict)
-            else:
-                return 'success'
+        try:
+            data = request.data
+            msg_dict = xmltodict.parse(data)['xml']
+            msg_type = msg_dict['MsgType']
+            if msg_type == 'text':
+                return handle_text_message(msg_dict)
+            elif msg_type == 'event':
+                event = msg_dict['Event']
+                if event == 'subscribe':
+                    return handle_subscribe_event(msg_dict)
+                else:
+                    app.logger.error("Unsupported message type: %s", msg_type)
+                    return 'success'
+        except Exception as e:
+            app.logger.error("Error handling message: %s", e)
+            return 'success'       
     else:
         # 处理其他类型消息
         # 在这里添加你需要处理的其他类型消息的代码
