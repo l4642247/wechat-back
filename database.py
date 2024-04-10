@@ -50,9 +50,9 @@ def log_message(openid, received_msg, reply_msg):
             with conn.cursor() as cursor:
                 # 构建插入消息日志的SQL语句
                 sql = """INSERT INTO message_log 
-                         (openid, received_message, reply_message, insert_time) 
-                         VALUES (%s, %s, %s, %s)"""
-                values = (openid, received_msg['Content'], reply_msg['Content'], datetime.now())
+                         (openid, received_message, reply_message) 
+                         VALUES (%s, %s, %s)"""
+                values = (openid, received_msg['Content'], reply_msg['Content'])
 
                 # 执行SQL语句
                 cursor.execute(sql, values)
