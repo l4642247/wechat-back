@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 # 根路由，用于验证部署成功
 @app.route('/')
 def index():
+    
     return jsonify({'message': 'Deployment successful!'})
 
 # 设置你的Token，用于验证微信服务器发送的请求
@@ -27,7 +28,7 @@ def handle_text_message(msg_dict):
             'MsgType': 'text',
             'Content': f"You said: {content}"
         }
-        log_message(msg_dict, reply)
+        log_message(msg_dict['FromUserName'], msg_dict, reply)
         return xmltodict.unparse({'xml': reply}, pretty=True)
     except Exception as e:
             app.logger.error("Error handling text message: %s", e)
@@ -46,7 +47,7 @@ def handle_subscribe_event(msg_dict):
             'MsgType': 'text',
             'Content': "欢迎关注！"
         }
-        log_message(msg_dict, reply)
+        log_message(msg_dict['FromUserName'], msg_dict, reply)
         return xmltodict.unparse({'xml': reply}, pretty=True)
     except Exception as e:
             app.logger.error("Error handling subscribe event: %s", e)
