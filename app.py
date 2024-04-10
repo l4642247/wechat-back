@@ -31,8 +31,8 @@ def handle_text_message(msg_dict):
         log_message(msg_dict['FromUserName'], msg_dict, reply)
         return xmltodict.unparse({'xml': reply}, pretty=True)
     except Exception as e:
-            app.logger.error("Error handling text message: %s", e)
-            return 'success'
+        app.logger.error("Error handling text message: %s", e)
+        return 'success'
 
 def handle_subscribe_event(msg_dict):
     try:
@@ -50,8 +50,8 @@ def handle_subscribe_event(msg_dict):
         log_message(msg_dict['FromUserName'], msg_dict, reply)
         return xmltodict.unparse({'xml': reply}, pretty=True)
     except Exception as e:
-            app.logger.error("Error handling subscribe event: %s", e)
-            return 'success'
+        app.logger.error("Error handling subscribe event: %s", e)
+        return 'success'
 
 @app.route('/wechat', methods=['GET', 'POST'])
 def wechat():
