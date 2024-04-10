@@ -2,6 +2,7 @@ import mysql.connector
 import xmltodict
 from datetime import datetime
 import logging
+import json
 
 # 设置日志记录器
 logger = logging.getLogger(__name__)
@@ -44,6 +45,10 @@ def log_message(openid, received_msg, reply_msg):
         logger.info("Received message: %s", received_msg)
         logger.info("Reply message: %s", reply_msg)
         
+        # 将接收到的消息和回复消息转换为 JSON 字符串
+        received_msg_json = json.dumps(received_msg)
+        reply_msg_json = json.dumps(reply_msg)
+        
         # 使用上下文管理器管理数据库连接和游标
         with connect_to_database() as conn:
             with conn.cursor() as cursor:
@@ -51,8 +56,8 @@ def log_message(openid, received_msg, reply_msg):
                 sql = """INSERT INTO message_log 
                          (openid, received_message, reply_message, insert_time) 
                          VALUES (%s, %s, %s, %s)"""
-                values = (openid, xmltodict.unparse({'xml': received_msg}), 
-                          xmltodict.unparse({'xml': reply_msg}), datetime.now())
+                values = (openid, received_msg_json['Content'], reply_msg_json['Content'], datetime.now())
+
                 # 执行SQL语句
                 cursor.execute(sql, values)
                 # 提交事务
